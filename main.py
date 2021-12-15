@@ -28,7 +28,7 @@ def appdetails(appid, filters = ''):
     params = {"appids": appid, "filters": filters}
     url = storeurl + "appdetails?" + urllib.parse.urlencode(params)
     safedata = safe_get(url)  # split this up in case invalid appid so we can get an error
-    loadeddata = json.loads(safedata)  # why is this json.loads instead of json.load?
+    loadeddata = json.load(safedata)  # why is this json.loads instead of json.load?
     return loadeddata
 
 # Accesses personal Steam library by constructing url and returning a json file. Requires an
@@ -45,9 +45,12 @@ def appdetails(appid, filters = ''):
 # about those games' data.
 def get_games_recent(key, steamid, count=10):
     combinedurl = steamurl + "IPlayerService/GetRecentlyPlayedGames/v1/?key=" + key + "&steamid="\
-                  + str(steamid) + "count=" + str(count)
+                  + str(steamid) + "&count=" + str(count)
     safedata = safe_get(combinedurl)
-    return json.load(safedata)
+    if safedata is None:
+        return None
+    else:
+        return json.load(safedata)
 
 # Accesses a game's info to check the number of players currently online on a particular game,
 # taking the game's appid as a parameter and return a json of the info. Temporarily commented out
@@ -69,7 +72,7 @@ def get_twitch_search(game):
     response = response.read().decode('utf-8')
     streamdata = json.loads(response)
     streamlist = []
-    for stream in streamdata["data"][0:3]: # can fetch more/less than 3 streams if desired
+    for stream in streamdata["data"][0:1]: # can fetch more/less than 3 streams if desired
         streamlist.append(stream["id"])
     return streamlist
 
@@ -126,10 +129,26 @@ def main_handler():
 @app.route('/homepage')
 def homepage_handler():
     username = request.args.get('username')
-    if get_games(username) == None: 
-        return render_template("homepage.html", page_title='honepage', name=username)
+    if get_games_recent(steamid = username, key="BE8EB884D291A5695FE1093BA30C3E93") is None: 
+        recentdic = get_recent_games(steamid = username, key="BE8EB884D291A5695FE1093BA30C3E93")
+        favorite_genre = {}
+        for x in recentdic["response"]["games"]:
+            genre = appdetails(x["appid"])["data"]["genres"]
+            if genre in favorite_genre.keys():
+                favorite_genre[genre] += 1
+            else:
+                favorite_genre[genre] = 1
+        max_key = max(favorite_genre, key=favorite_genre.get)
+        recsdict = max_key
+        everything = get_info(recentdic, recsdict)
+        for x  i
+
+
+
+        recsdict = 
+        return render_template('homepage.html', page_title='honepage', name=username)
     else:
-        return render_template("mainpage.html", page_title="mainpage - Error", prompt = "The steam ID is either invalid or private")
+        return render_template('mainpage.html', page_title='mainpage - Error', prompt = 'The steam ID is either invalid or private')
     
 
 
