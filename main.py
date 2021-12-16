@@ -32,7 +32,7 @@ def appdetails(appid, filters=''):
     params = {"appids": appid, "filters": filters}
     url = storeurl + "appdetails?" + urllib.parse.urlencode(params)
     safedata = safe_get(url)  # split this up in case invalid appid so we can get an error
-    loadeddata = json.load(safedata)  # why is this json.loads instead of json.load?
+    loadeddata = json.loads(safedata)  # why is this json.loads instead of json.load?
     return loadeddata
 
 
@@ -55,7 +55,7 @@ def get_games_recent(key, steamid, count=10):
     if safedata is None:
         return None
     else:
-        return json.load(safedata)
+        return json.loads(safedata)
 
 
 # Accesses a game's info to check the number of players currently online on a particular game,
@@ -80,15 +80,21 @@ def get_twitch_search(game):
     print(streamdata)
     #streamlist = []
     #for stream in streamdata["data"][0:1]:  # can fetch more/less than 3 streams if desired
-    print(streamdata["data"][0]["id"])
-    channelurl = twitchurl + "helix/channels?broadcaster_id=" + str(streamdata["data"][0]["id"])
-    channelreq = urllib.request.Request(channelurl, headers=hdr)
-    channelresponse = urllib.request.urlopen(channelreq)
-    channelresponse = channelresponse.read().decode('utf-8')
-    channeldata = json.loads(channelresponse)
+    #print(streamdata["data"][0]["id"])
+    if len(streamdata["data"]) > 0:
+        channelurl = twitchurl + "helix/channels?broadcaster_id=" + str(streamdata["data"][0]["id"])
+        channelreq = urllib.request.Request(channelurl, headers=hdr)
+        channelresponse = urllib.request.urlopen(channelreq)
+        channelresponse = channelresponse.read().decode('utf-8')
+        channeldata = json.loads(channelresponse)
     #print(channeldata)
-    return channeldata["data"][0]["broadcaster_name"]
+        if len(channeldata["data"]) > 0:
+            return channeldata["data"][0]["broadcaster_name"]
+        else:
+            return None
     #return streamlist
+    else: 
+        return None 
 #print(get_twitch_search("halo"))
 
 # Takes in a genre/tag as a parameter to search the Steam featured section for any similar games
@@ -119,21 +125,20 @@ def recommendation_helper(data, genre, dic, OS):
 # recent and recommended for return. This info should go directly onto our page.
 def get_info(recentdict, recsdict):
     infodict = {"recent games": [], "recommended games": []}
-    for game in recentdict["responses"]["games"]:  # call must pass in recentdict with get_recent_games
+    for game in recentdict["response"]["games"]:  # call must pass in recentdict with get_recent_games
         combinedurl = steamurl + "ISteamNews/GetNewsForApp/v2/?appid=" + str(
             game["appid"])  # can add max length to content or count for # of posts
         safedata = safe_get(combinedurl)
-        news = json.load(safedata)
-        streams = get_twitch_search(game["name"])
+        news = json.loads(safedata)
+        streams = get_twitch_search(game["name"].replace(" ", ""))
         infodict["recent games"].append({"name": game["name"],
                                          "news": news["appnews"]["newsitems"], "streams": streams})
-    for gameid in recsdict:
-        combinedurl = steamurl + "ISteamNews/GetNewsForApp/v2/?appid=" + str(
-            gameid)  # can add max length to content or count for # of posts
+    for gameid in recsdict.keys():
+        combinedurl = steamurl + "ISteamNews/GetNewsForApp/v2/?appid=" + gameid  # can add max length to content or count for # of posts
         safedata = safe_get(combinedurl)
-        news = json.load(safedata)
-        streams = get_twitch_search(gameid["name"])
-        infodict["recommended games"].append({"name": gameid["name"], "genrerec": gameid["genre"],
+        news = json.loads(safedata)
+        streams = get_twitch_search(recsdict[gameid]["name"].replace(" ",""))
+        infodict["recommended games"].append({"name": recsdict[gameid]["name"], "genrerec": recsdict[gameid]["genre"],
                                               "news": news["appnews"]["newsitems"],
                                               "streams": streams})
     return infodict
@@ -152,24 +157,25 @@ def homepage_handler():
     username = request.args.get('username')
     if get_games_recent(steamid=username, key="BE8EB884D291A5695FE1093BA30C3E93") is None:
         return render_template('mainpage.html', page_title='mainpage - Error',
-                               prompt='The steam ID is either invalid or private')
+                               prompt='The steam ID is invalid')
+    elif len(get_games_recent(steamid=username, key="BE8EB884D291A5695FE1093BA30C3E93")["response"].keys()) == 0:
+        return render_template('mainpage.html', page_title='mainpage - Error',
+                               prompt='The steam ID is private please set it to pulic and try again!')
     else:
-        recentdic = get_recent_games(steamid=username, key="BE8EB884D291A5695FE1093BA30C3E93")
+        recentdic = get_games_recent(steamid=username, key="BE8EB884D291A5695FE1093BA30C3E93")
         favorite_genre = {}
         for x in recentdic["response"]["games"]:
-            genre = appdetails(x["appid"])["data"]["genres"]
-            if genre in favorite_genre.keys():
-                favorite_genre[genre] += 1
-            else:
-                favorite_genre[genre] = 1
+            genre = appdetails(x["appid"])[str(x["appid"])]["data"]["genres"]
+            for y in range(len(genre)):         
+                if genre[y]["description"] in favorite_genre.keys():
+                    favorite_genre[genre[y]["description"]] += 1
+                else:
+                    favorite_genre[genre[y]["description"]] = 1
         max_key = max(favorite_genre, key=favorite_genre.get)
-        recsdict = max_key
+        recsdict = recommendation(max_key)
         everything = get_info(recentdic, recsdict)
-        #for recententry in everything["recent games"]:
-
-        #for recsentry in everything["recommended games"]:
-
-        return render_template('homepage.html', page_title='honepage', name=username)
+        return render_template('homepage.html', page_title='honepage', 
+        name=username, stream = everything["recommended games"], stream2 = everything["recent games"], genre = max_key)
 
 
 if __name__ == '__main__':
