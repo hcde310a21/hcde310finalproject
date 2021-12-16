@@ -10,27 +10,28 @@
 </header>
 <div id="twitch-embed">Recommended stream beacause you like {{genre}}</div>
 <script src="https://embed.twitch.tv/embed/v1.js"></script>
-<iframe>
-    src="https://player.twitch.tv/?video=v40464143&parent=streamernews.example.com&autoplay=false"
-    height="720"
-    width="1280"
-    allowfullscreen="true">
-</iframe>
+
 {% for x in stream %}
-
-
-<!-- Load the Twitch embed JavaScript file -->
-
-
-<!-- Create a Twitch.Embed object that will render within the "twitch-embed" element -->
-
+<script type="text/javascript">
+    new Twitch.Embed("twitch-embed", {
+      width: 854,
+      height: 480,
+      channel: "{{x}}"
+      // Only needed if this page is going to be embedded on other websites
+    });
+</script>
 {% endfor %}
 <div id="twitch-embed">Recommended stream beacause you played recently</div>
-{% for i in range(0, len2) %}
-<!-- Load the Twitch embed JavaScript file -->
-{{stream2[i]}}
-<!-- Create a Twitch.Embed object that will render within the "twitch-embed" element -->
-
+{% for x in steam2 %}
+ 
+<script type="text/javascript">
+    new Twitch.Embed("twitch-embed", {
+      width: 854,
+      height: 480,
+      channel: "{{x}}"
+      // Only needed if this page is going to be embedded on other websites
+    });
+</script>
 {% endfor %}
 </body>
 </html>

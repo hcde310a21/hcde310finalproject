@@ -74,7 +74,7 @@ def get_twitch_search(game):
     hdr = {'Client-ID': "10thxh1tgtgb7j2g4842qcgptipob4",
            'Authorization': "Bearer rmxafdqguk8gmu9h6jnl512zznpj3e"}
     req = urllib.request.Request(url, headers=hdr)
-    response = urllib.request.urlopen(req)
+    response = urllib.request.urlopen(req.encode('utf-8'))
     response = response.read().decode('utf-8')
     streamdata = json.loads(response)
     print(streamdata)
@@ -181,20 +181,23 @@ def homepage_handler():
                 else:
                     favorite_genre[genre[y]["description"]] = 1
         max_key = max(favorite_genre, key=favorite_genre.get)
-        recsdict = recommendation(max_key)
+        if max_key is not None:
+            recsdict = recommendation(max_key)
+        else:
+            max_key = sorted((x for x in favorite_genre.keys()), key = lambda x: favorite_genre[x], reverse = True)
+            recsdict = recommendation(max_key[0])
+            print(recsdict)
         everything = get_info(recentdic, recsdict)
         stream = []
         stream2 = []
-        stream_channel1 = []
-        stream_channel2 = []
         for x in everything["recommended games"]:
-            stream.append(x["streams"])
+            if x["streams"] is not None:
+                stream.append(x["streams"])
         for x in everything["recent games"]:
-            stream.append(x["streams"])
-        for x in stream2:
-            stream_channel2.append(stream_helper(x))
+            if x["streams"] is not None:
+                stream2.append(x["streams"])
         return render_template('homepage.html', page_title='honepage', 
-        name=username, stream = stream, stream2 = stream_channel2, len2 = len(stream_channel2), genre = max_key)
+        name=username, stream = stream, stream2 = stream2, genre = max_key)
 
 
 if __name__ == '__main__':
