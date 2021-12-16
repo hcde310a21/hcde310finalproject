@@ -143,6 +143,15 @@ def get_info(recentdict, recsdict):
                                               "streams": streams})
     return infodict
 
+def stream_helper(channel):
+    return """<script type="text/javascript">
+  new Twitch.Embed("twitch-embed", {
+    width: 854,
+    height: 480,
+    channel: %s
+    // Only needed if this page is going to be embedded on other websites
+  });
+</script>"""%(channel)
 
 app = Flask(__name__)
 
@@ -174,8 +183,18 @@ def homepage_handler():
         max_key = max(favorite_genre, key=favorite_genre.get)
         recsdict = recommendation(max_key)
         everything = get_info(recentdic, recsdict)
+        stream = []
+        stream2 = []
+        stream_channel1 = []
+        stream_channel2 = []
+        for x in everything["recommended games"]:
+            stream.append(x["streams"])
+        for x in everything["recent games"]:
+            stream.append(x["streams"])
+        for x in stream2:
+            stream_channel2.append(stream_helper(x))
         return render_template('homepage.html', page_title='honepage', 
-        name=username, stream = everything["recommended games"], stream2 = everything["recent games"], genre = max_key)
+        name=username, stream = stream, stream2 = stream_channel2, len2 = len(stream_channel2), genre = max_key)
 
 
 if __name__ == '__main__':
