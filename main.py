@@ -79,7 +79,7 @@ def get_twitch_search(game):
     response = urllib.request.urlopen(req)
     response = response.read().decode('utf-8')
     streamdata = json.loads(response)
-    print(streamdata)
+    #print(streamdata)
     #streamlist = []
     #for stream in streamdata["data"][0:1]:  # can fetch more/less than 3 streams if desired
     #print(streamdata["data"][0]["id"])
@@ -135,7 +135,7 @@ def get_info(recentdict, recsdict):
         safedata = safe_get(combinedurl)
         news = json.loads(safedata)
         streams = get_twitch_search(game["name"].replace(" ",""))
-        print(streams)
+        #print(streams)
         infodict["recent games"].append({"name": game["name"],
                                          "news": news["appnews"]["newsitems"], "streams": streams})
     for gameid in recsdict.keys():
@@ -169,37 +169,41 @@ def homepage_handler():
     else:
         recentdic = get_games_recent(steamid=username, key="BE8EB884D291A5695FE1093BA30C3E93")
         favorite_genre = {}
-        for x in recentdic["response"]["games"]:
-            genre = appdetails(x["appid"])[str(x["appid"])]["data"]["genres"]
-            for y in range(len(genre)):         
-                if genre[y]["description"] in favorite_genre.keys():
-                    favorite_genre[genre[y]["description"]] += 1
-                else:
-                    favorite_genre[genre[y]["description"]] = 1
-        max_key = max(favorite_genre, key=favorite_genre.get)
-        if max_key is not None:
-            recsdict = recommendation(max_key)
+        if len(recentdic["response"]) > 1:
+            for x in recentdic["response"]["games"]:
+                genre = appdetails(x["appid"])[str(x["appid"])]["data"]["genres"]
+                for y in range(len(genre)):         
+                    if genre[y]["description"] in favorite_genre.keys():
+                        favorite_genre[genre[y]["description"]] += 1
+                    else:
+                        favorite_genre[genre[y]["description"]] = 1
+            max_key = max(favorite_genre, key=favorite_genre.get)
+            if max_key is not None:
+                recsdict = recommendation(max_key)
+            else:
+                max_key = sorted((x for x in favorite_genre.keys()), key = lambda x: favorite_genre[x], reverse = True)
+                recsdict = recommendation(max_key[0])
+                #print(recsdict)
+            everything = get_info(recentdic, recsdict)
+            stream = []
+            stream2 = []
+            news = []
+            for x in everything["recommended games"]:
+                if x["streams"] is not None:
+                    stream.append(x["streams"])
+                if x["news"] is not None:
+                    news.append(x["news"])
+            for x in everything["recent games"]:
+                if x["streams"] is not None:
+                    stream2.append(x["streams"])
+                if x["news"] is not None:
+                    news.append(x["news"])
+            return render_template('homepage.html', page_title='homepage',
+                                name=username, news=news, stream=stream,
+                                stream2=stream2, genre=max_key)
         else:
-            max_key = sorted((x for x in favorite_genre.keys()), key = lambda x: favorite_genre[x], reverse = True)
-            recsdict = recommendation(max_key[0])
-            print(recsdict)
-        everything = get_info(recentdic, recsdict)
-        stream = []
-        stream2 = []
-        news = []
-        for x in everything["recommended games"]:
-            if x["streams"] is not None:
-                stream.append(x["streams"])
-            if x["news"] is not None:
-                news.append(x["news"])
-        for x in everything["recent games"]:
-            if x["streams"] is not None:
-                stream2.append(x["streams"])
-            if x["news"] is not None:
-                news.append(x["news"])
-        return render_template('homepage.html', page_title='homepage',
-                               name=username, news=news, stream=stream,
-                               stream2=stream2, genre=max_key)
+            return render_template('mainpage.html', page_title='mainpage - Error',
+                               prompt='You have not played any steam games recently, we have nothing to update you:(')
 
 
 if __name__ == '__main__':
