@@ -70,11 +70,13 @@ def get_games_recent(key, steamid, count=10):
 # is taken as a parameter. As of right now, no way to organize search results or check if stream is
 # accurate. Currently returning list of 3 stream IDs for embedding onto site but can be changed.
 def get_twitch_search(game):
-    url = twitchurl + "helix/search/categories?query=" + game
+    params = {"query": game}
+    paramstr = urllib.parse.urlencode(params)
+    url = twitchurl + "helix/search/categories?" + paramstr
     hdr = {'Client-ID': "10thxh1tgtgb7j2g4842qcgptipob4",
            'Authorization': "Bearer rmxafdqguk8gmu9h6jnl512zznpj3e"}
     req = urllib.request.Request(url, headers=hdr)
-    response = urllib.request.urlopen(req.encode('utf-8'))
+    response = urllib.request.urlopen(req)
     response = response.read().decode('utf-8')
     streamdata = json.loads(response)
     print(streamdata)
@@ -82,7 +84,9 @@ def get_twitch_search(game):
     #for stream in streamdata["data"][0:1]:  # can fetch more/less than 3 streams if desired
     #print(streamdata["data"][0]["id"])
     if len(streamdata["data"]) > 0:
-        channelurl = twitchurl + "helix/channels?broadcaster_id=" + str(streamdata["data"][0]["id"])
+        params = {"broadcaster_id": streamdata["data"][0]["id"]}
+        paramstr = urllib.parse.urlencode(params)
+        channelurl = twitchurl + "helix/channels?" + paramstr
         channelreq = urllib.request.Request(channelurl, headers=hdr)
         channelresponse = urllib.request.urlopen(channelreq)
         channelresponse = channelresponse.read().decode('utf-8')
@@ -130,7 +134,8 @@ def get_info(recentdict, recsdict):
             game["appid"])  # can add max length to content or count for # of posts
         safedata = safe_get(combinedurl)
         news = json.loads(safedata)
-        streams = get_twitch_search(game["name"].replace(" ", ""))
+        streams = get_twitch_search(game["name"].replace(" ",""))
+        print(streams)
         infodict["recent games"].append({"name": game["name"],
                                          "news": news["appnews"]["newsitems"], "streams": streams})
     for gameid in recsdict.keys():
@@ -143,15 +148,6 @@ def get_info(recentdict, recsdict):
                                               "streams": streams})
     return infodict
 
-def stream_helper(channel):
-    return """<script type="text/javascript">
-  new Twitch.Embed("twitch-embed", {
-    width: 854,
-    height: 480,
-    channel: %s
-    // Only needed if this page is going to be embedded on other websites
-  });
-</script>"""%(channel)
 
 app = Flask(__name__)
 
@@ -191,7 +187,6 @@ def homepage_handler():
         stream = []
         stream2 = []
         news = []
-        news2 = []
         for x in everything["recommended games"]:
             if x["streams"] is not None:
                 stream.append(x["streams"])
@@ -201,7 +196,7 @@ def homepage_handler():
             if x["streams"] is not None:
                 stream2.append(x["streams"])
             if x["news"] is not None:
-                news2.append(x["news"])
+                news.append(x["news"])
         return render_template('homepage.html', page_title='homepage',
                                name=username, news=news, news2=news2, stream=stream,
                                stream2=stream2, genre=max_key)

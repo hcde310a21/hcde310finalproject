@@ -8,6 +8,9 @@
 <h1>Welcome user: {{name}}!
 </h1>
 </header>
+{% for newsitem in news %}
+<p>{{newsitem}}</p>
+{% endfor %}
 <div id="twitch-embed">Recommended stream because you like {{genre}}</div>
 <script src="https://embed.twitch.tv/embed/v1.js"></script>
 
@@ -21,9 +24,7 @@
     });
 </script>
 {% endfor %}
-{% for newsitem in news %}
-<p>{{newsitem}}</p>
-{% endfor %}
+
 <div id="twitch-embed">Recommended stream because you played recently</div>
 {% for x in stream2 %}
 <script type="text/javascript">
@@ -34,9 +35,6 @@
       // Only needed if this page is going to be embedded on other websites
     });
 </script>
-{% endfor %}
-{% for newsitem in news2 %}
-<p>{{newsitem}}</p>
 {% endfor %}
 </body>
 </html>
