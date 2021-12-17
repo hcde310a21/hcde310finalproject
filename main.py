@@ -198,7 +198,7 @@ def homepage_handler():
             if x["news"] is not None:
                 news.append(x["news"])
         return render_template('homepage.html', page_title='homepage',
-                               name=username, news=news, news2=news2, stream=stream,
+                               name=username, news=news, stream=stream,
                                stream2=stream2, genre=max_key)
 
 
