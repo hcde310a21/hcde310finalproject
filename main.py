@@ -131,7 +131,7 @@ def get_info(recentdict, recsdict):
     infodict = {"recent games": [], "recommended games": []}
     for game in recentdict["response"]["games"]:  # call must pass in recentdict with get_recent_games
         combinedurl = steamurl + "ISteamNews/GetNewsForApp/v2/?appid=" + str(
-            game["appid"])  # can add max length to content or count for # of posts
+            game["appid"]) + "&count=3"  # can add max length to content or count for # of posts
         safedata = safe_get(combinedurl)
         news = json.loads(safedata)
         streams = get_twitch_search(game["name"].replace(" ",""))
@@ -139,7 +139,7 @@ def get_info(recentdict, recsdict):
         infodict["recent games"].append({"name": game["name"],
                                          "news": news["appnews"]["newsitems"], "streams": streams})
     for gameid in recsdict.keys():
-        combinedurl = steamurl + "ISteamNews/GetNewsForApp/v2/?appid=" + gameid  # can add max length to content or count for # of posts
+        combinedurl = steamurl + "ISteamNews/GetNewsForApp/v2/?appid=" + gameid  + "&count=3" # can add max length to content or count for # of posts
         safedata = safe_get(combinedurl)
         news = json.loads(safedata)
         streams = get_twitch_search(recsdict[gameid]["name"].replace(" ",""))
@@ -192,14 +192,18 @@ def homepage_handler():
                 if x["streams"] is not None:
                     stream.append(x["streams"])
                 if x["news"] is not None:
-                    news.append(x["news"])
+                    for y in x["news"]:
+                        news.append(y["title"])    
+                        news.append(y["url"])
             for x in everything["recent games"]:
                 if x["streams"] is not None:
                     stream2.append(x["streams"])
                 if x["news"] is not None:
-                    news.append(x["news"])
+                    for y in x["news"]:
+                        news.append(y["title"])
+                        news.append(y["url"])
             return render_template('homepage.html', page_title='homepage',
-                                name=username, news=news, stream=stream,
+                                name=username, news=news, length=range(0, len(news), 2), stream=stream,
                                 stream2=stream2, genre=max_key)
         else:
             return render_template('mainpage.html', page_title='mainpage - Error',

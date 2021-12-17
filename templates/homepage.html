@@ -8,10 +8,7 @@
 <h1>Welcome user: {{name}}!
 </h1>
 </header>
-{% for newsitem in news %}
-<p>{{newsitem}}</p>
-{% endfor %}
-<div id="twitch-embed">Recommended stream because you like {{genre}}</div>
+<h1 id="twitch-embed">Recommended stream because you like {{genre}}:</h1>
 <script src="https://embed.twitch.tv/embed/v1.js"></script>
 
 {% for x in stream %}
@@ -25,7 +22,7 @@
 </script>
 {% endfor %}
 
-<div id="twitch-embed">Recommended stream because you played recently</div>
+<h1 id="twitch-embed">Recommended stream because you played recently:</h1>
 {% for x in stream2 %}
 <script type="text/javascript">
     new Twitch.Embed("twitch-embed", {
@@ -36,5 +33,13 @@
     });
 </script>
 {% endfor %}
+<section>
+<div>News update for the games you are interested:</div>
+{% for x in length %}
+<a href="{{news[x+1]}}">{{news[x]}}</a>
+<br>
+{% endfor %}
+</section>
+<button><a href="{{ url_for('main_handler') }}">Go back</a></button>
 </body>
 </html>
