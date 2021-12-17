@@ -190,14 +190,21 @@ def homepage_handler():
         everything = get_info(recentdic, recsdict)
         stream = []
         stream2 = []
+        news = []
+        news2 = []
         for x in everything["recommended games"]:
             if x["streams"] is not None:
                 stream.append(x["streams"])
+            if x["news"] is not None:
+                news.append(x["news"])
         for x in everything["recent games"]:
             if x["streams"] is not None:
                 stream2.append(x["streams"])
-        return render_template('homepage.html', page_title='honepage', 
-        name=username, stream = stream, stream2 = stream2, genre = max_key)
+            if x["news"] is not None:
+                news2.append(x["news"])
+        return render_template('homepage.html', page_title='homepage',
+                               name=username, news=news, news2=news2, stream=stream,
+                               stream2=stream2, genre=max_key)
 
 
 if __name__ == '__main__':
